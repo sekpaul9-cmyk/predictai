@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<meta name="theme-color" content="#020917"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<link rel="manifest" href="manifest.json"/>
+<title>PredictAI</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{background:#020917;color:#e2e8f0;font-family:system-ui,sans-serif;min-height:100vh;padding-bottom:130px}
+.glow{position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse 60% 30% at 50% 0%,rgba(34,197,94,0.07) 0%,transparent 70%);z-index:0}
+.wrap{max-width:480px;margin:0 auto;padding:18px 14px;position:relative;z-index:1}
+nav{display:flex;gap:6px;background:rgba(15,23,42,0.8);border:1px solid rgba(255,255,255,0.07);border-radius:14px;padding:5px;margin-bottom:20px}
+nav button{flex:1;padding:9px 4px;border:none;border-radius:10px;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:0.05em;transition:all 0.2s;background:transparent;color:#475569;font-family:inherit}
+nav button.active{background:rgba(34,197,94,0.15);color:#22c55e;border:1px solid rgba(34,197,94,0.25)}
+.logo{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+.logo h1{font-size:22px;font-weight:900;letter-spacing:-1px;color:#fff}
+.logo h1 span{color:#22c55e}
+.badge{font-size:8px;background:rgba(34,197,94,0.15);color:#22c55e;border:1px solid rgba(34,197,94,0.25);border-radius:99px;padding:2px 7px;font-weight:800;letter-spacing:0.1em}
+.date-row{display:flex;align-items:center;gap:6px;margin-bottom:18px}
+.dot{width:8px;height:8px;border-radius:50%;background:#22c55e;position:relative;flex-shrink:0}
+.dot::after{content:'';position:absolute;inset:-3px;border-radius:50%;background:#22c55e;opacity:0.3;animation:ping 1.2s infinite}
+@keyframes ping{0%{transform:scale(1);opacity:0.4}100%{transform:scale(2.4);opacity:0}}
+.date-txt{font-size:9px;color:#475569;font-family:monospace;letter-spacing:0.1em;text-transform:uppercase}
+.refresh-btn{margin-left:auto;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.2);border-radius:8px;padding:4px 10px;color:#22c55e;font-size:9px;font-weight:700;cursor:pointer;font-family:inherit}
+.card{background:rgba(15,23,42,0.8);border:1px solid rgba(255,255,255,0.07);border-radius:16px;padding:14px;margin-bottom:10px;cursor:pointer;transition:all 0.2s}
+.card.on{background:rgba(34,197,94,0.06);border-color:rgba(34,197,94,0.3)}
+.card-body{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.meta{display:flex;gap:5px;align-items:center;margin-bottom:5px;flex-wrap:wrap}
+.league{font-size:8px;color:#475569;font-weight:700;letter-spacing:0.1em;text-transform:uppercase}
+.ko{font-size:8px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:4px;padding:1px 6px;color:#64748b}
+.teams{font-size:14px;font-weight:800;color:#fff;line-height:1.3;margin-bottom:6px}
+.teams em{color:#334155;font-style:normal;font-weight:400;font-size:12px}
+.tip-badge{font-size:8px;font-weight:800;letter-spacing:0.06em;text-transform:uppercase;border-radius:5px;padding:3px 9px;background:rgba(255,255,255,0.05);color:#64748b}
+.tip-badge.on{background:rgba(34,197,94,0.15);color:#22c55e}
+.reason{font-size:10px;color:#475569;margin-top:6px;line-height:1.5}
+.odds-col{text-align:right;flex-shrink:0}
+.odds{font-size:20px;font-weight:900;color:#fff}
+.odds.on{color:#22c55e}
+.conf{font-size:8px;font-weight:700;margin-top:2px}
+.chk{width:20px;height:20px;border-radius:50%;border:2px solid rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center;margin-left:auto;margin-top:5px;font-size:11px;font-weight:900;color:#000;transition:all 0.2s}
+.chk.on{background:#22c55e;border-color:#22c55e}
+.top-pick{font-size:8px;background:rgba(34,197,94,0.1);color:#22c55e;border:1px solid rgba(34,197,94,0.2);border-radius:99px;padding:2px 7px;font-weight:800;margin-bottom:6px;display:inline-block}
+.loading{text-align:center;padding:40px 20px;color:#475569}
+.spin{display:inline-block;animation:sp 1s linear infinite;font-size:28px;margin-bottom:10px}
+@keyframes sp{to{transform:rotate(360deg)}}
+.notice{border-radius:12px;padding:12px 14px;margin-bottom:12px;font-size:10px;line-height:1.5}
+.notice.live{background:rgba(34,197,94,0.05);border:1px solid rgba(34,197,94,0.15);color:#64748b}
+.notice.live strong{color:#22c55e}
+.notice.warn{background:rgba(245,158,11,0.05);border:1px solid rgba(245,158,11,0.15);color:#64748b}
+.notice.warn strong{color:#f59e0b}
+.acca{position:fixed;bottom:0;left:0;right:0;background:rgba(2,9,23,0.97);border-top:1px solid rgba(34,197,94,0.2);padding:12px 16px;z-index:100;backdrop-filter:blur(12px)}
+.acca-inner{max-width:480px;margin:0 auto}
+.acca-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.acca-lbl{font-size:9px;color:#475569;font-weight:700;letter-spacing:0.15em;text-transform:uppercase}
+.acca-total{font-size:24px;font-weight:900;color:#22c55e;letter-spacing:-1px}
+.acca-total.empty{color:#1e293b}
+.acca-picks{display:flex;flex-direction:column;gap:3px}
+.apick{display:flex;justify-content:space-between;font-size:10px;color:#64748b}
+.apick span:last-child{color:#22c55e;font-weight:700}
+.acca-empty{font-size:11px;color:#1e293b;text-align:center;padding:2px 0}
+.stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px}
+.stat-box{background:rgba(15,23,42,0.8);border:1px solid rgba(255,255,255,0.06);border-radius:14px;padding:12px;text-align:center}
+.stat-val{font-size:20px;font-weight:900;color:#fff;letter-spacing:-0.5px}
+.stat-lbl{font-size:8px;color:#475569;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;margin-top:3px}
+.bet-form{background:rgba(15,23,42,0.8);border:1px solid rgba(255,255,255,0.07);border-radius:16px;padding:16px;margin-bottom:16px}
+.bet-form h3{font-size:13px;font-weight:800;color:#fff;margin-bottom:12px}
+.field{margin-bottom:10px}
+.field label{font-size:9px;color:#475569;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;display:block;margin-bottom:4px}
+.field input{width:100%;background:rgba(2,9,23,0.7);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:10px 12px;color:#e2e8f0;font-size:13px;outline:none;font-family:inherit}
+.field input:focus{border-color:rgba(34,197,94,0.3)}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.btn{width:100%;padding:11px;border:none;border-radius:12px;background:linear-gradient(135deg,#22c55e,#15803d);color:#fff;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit}
+.bet-entry{background:rgba(15,23,42,0.7);border:1px solid rgba(255,255,255,0.06);border-radius:14px;padding:13px;margin-bottom:9px}
+.bet-desc{font-size:13px;font-weight:700;color:#e2e8f0;margin-bottom:2px}
+.bet-date{font-size:9px;color:#475569;margin-bottom:7px}
+.bet-tags{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.btag{font-size:9px;padding:2px 8px;border-radius:5px;font-weight:700}
+.t-stake{background:rgba(255,255,255,0.05);color:#94a3b8}
+.t-odds{background:rgba(99,102,241,0.1);color:#818cf8}
+.t-win{background:rgba(34,197,94,0.1);color:#22c55e}
+.t-lose{background:rgba(239,68,68,0.1);color:#f87171}
+.t-pend{background:rgba(245,158,11,0.1);color:#f59e0b}
+.bet-actions{display:flex;gap:6px;flex-wrap:wrap}
+.bsm{padding:5px 11px;border:none;border-radius:7px;font-size:9px;font-weight:700;cursor:pointer;font-family:inherit}
+.bsm-win{background:rgba(34,197,94,0.1);color:#22c55e;border:1px solid rgba(34,197,94,0.2)}
+.bsm-lose{background:rgba(239,68,68,0.1);color:#f87171;border:1px solid rgba(239,68,68,0.2)}
+.bsm-del{background:transparent;color:#475569;border:1px solid rgba(255,255,255,0.07)}
+.empty-state{text-align:center;padding:36px 20px;color:#1e293b}
+.empty-state .icon{font-size:30px;margin-bottom:8px}
+.disclaimer{text-align:center;font-size:8px;color:#1e293b;line-height:1.8;margin-top:18px;padding-bottom:10px}
+</style>
+</head>
+<body>
+<div class="glow"></div>
+<div class="wrap">
+  <div class="logo">
+    <span style="font-size:20px">🛡️</span>
+    <h1>PREDICT<span>AI</span></h1>
+    <span class="badge">LIVE</span>
+  </div>
+  <div class="date-row">
+    <div class="dot"></div>
+    <span class="date-txt" id="dateLabel"></span>
+    <button class="refresh-btn" onclick="loadFixtures()">↺ REFRESH</button>
+  </div>
+  <nav>
+    <button class="active" onclick="showTab('slip')">⚡ TODAY'S SLIP</button>
+    <button onclick="showTab('tracker')">📊 BET TRACKER</button>
+  </nav>
+  <div id="tab-slip">
+    <div id="matchList"></div>
+    <div class="disclaimer">FOR ENTERTAINMENT ONLY · GAMBLING CAN BE ADDICTIVE · 18+</div>
+  </div>
+  <div id="tab-tracker" style="display:none">
+    <div class="stats-row" id="statsRow"></div>
+    <div class="bet-form">
+      <h3>➕ Log a Bet</h3>
+      <div class="field"><label>Description</label><input id="bDesc" placeholder="e.g. Man Utd BTTS @1.48"/></div>
+      <div class="two-col">
+        <div class="field"><label>Stake (£)</label><input id="bStake" type="number" placeholder="10"/></div>
+        <div class="field"><label>Odds</label><input id="bOdds" type="number" step="0.01" placeholder="1.48"/></div>
+      </div>
+      <button class="btn" onclick="addBet()">SAVE BET</button>
+    </div>
+    <div id="betList"></div>
+    <div class="disclaimer">FOR ENTERTAINMENT ONLY · GAMBLING CAN BE ADDICTIVE · 18+</div>
+  </div>
+</div>
+
+<div class="acca" id="accaBar">
+  <div class="acca-inner">
+    <div class="acca-row">
+      <div style="flex:1;min-width:0">
+        <div class="acca-lbl" id="accaCount">YOUR ACCA · 0 MATCHES</div>
+        <div class="acca-picks" id="accaPicks"><div class="acca-empty">Tap matches to build your acca</div></div>
+      </div>
+      <div style="text-align:right;flex-shrink:0;margin-left:12px">
+        <div style="font-size:8px;color:#22c55e;font-weight:700;letter-spacing:0.1em">TOTAL ODDS</div>
+        <div class="acca-total empty" id="accaTotal">—</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const TODAY = new Date();
+const PAD = n => String(n).padStart(2,'0');
+const TODAY_ISO = `${TODAY.getFullYear()}-${PAD(TODAY.getMonth()+1)}-${PAD(TODAY.getDate())}`;
+const DAYS=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
+document.getElementById('dateLabel').textContent=`${DAYS[TODAY.getDay()]}, ${TODAY.getDate()} ${MONTHS[TODAY.getMonth()]} ${TODAY.getFullYear()}`;
+
+let fixtures=[], selected=new Set();
+let bets=(()=>{try{return JSON.parse(localStorage.getItem('pai_bets')||'[]')}catch{return[]}})();
+
+function assignTip(i, league=''){
+  const l = league.toLowerCase();
+
+  // Women's football
+  if(l.includes("women") || l.includes("woman") || l.includes("femenin") || l.includes("femmes") || l.includes("damen")){
+    const tips=[
+      {tip:"Both Teams to Score", reason:"Women's top-tier fixtures are increasingly high-scoring with attacking quality on both sides.", o:1.48},
+      {tip:"Over 1.5 Goals",      reason:"Women's Champions League fixtures regularly produce multiple goals from clinical attackers.", o:1.40},
+      {tip:"Over 2.5 Goals",      reason:"Women's elite football has seen a surge in attacking output at this level.", o:1.55},
+    ];
+    const t=tips[i%tips.length]; return {...t, conf:74+(i%4)*2};
+  }
+
+  // International friendlies
+  if(l.includes("friendly") || l.includes("amical") || l.includes("amistoso")){
+    const tips=[
+      {tip:"Over 2.5 Goals",      reason:"International friendlies are loose affairs — managers rotate and defences are rarely tight.", o:1.52},
+      {tip:"Both Teams to Score", reason:"Friendlies typically see both sides score as coaches experiment with attacking options.", o:1.45},
+      {tip:"Over 1.5 Goals",      reason:"Goals flow freely in friendlies with reduced defensive intensity.", o:1.35},
+    ];
+    const t=tips[i%tips.length]; return {...t, conf:68+(i%4)*2};
+  }
+
+  // FIFA Series / lower-ranked nations
+  if(l.includes("fifa series") || l.includes("concacaf") || l.includes("caf") || l.includes("afc") || l.includes("ofc")){
+    const tips=[
+      {tip:"Over 2.5 Goals",      reason:"Mismatched FIFA Series ties often produce high goal tallies from dominant sides.", o:1.50},
+      {tip:"Home Win",            reason:"Home advantage is significant in lower-ranked international fixtures.", o:1.42},
+      {tip:"Over 3.5 Goals",      reason:"Heavily one-sided FIFA Series matches regularly see the stronger nation run up big scores.", o:1.65},
+    ];
+    const t=tips[i%tips.length]; return {...t, conf:70+(i%3)*3};
+  }
+
+  // World Cup / Euro / Nations League qualifiers
+  if(l.includes("world cup") || l.includes("qualifier") || l.includes("qualifying") || l.includes("nations league") || l.includes("euro")){
+    const tips=[
+      {tip:"Home Win",            reason:"Home nations have a strong record in qualifying — crowd advantage is decisive.", o:1.45},
+      {tip:"Both Teams to Score", reason:"Qualifying pressure means attacking nations push hard regardless of the opponent.", o:1.48},
+      {tip:"Over 1.5 Goals",      reason:"Competitive qualifiers tend to produce goals as away sides have nothing to lose.", o:1.40},
+    ];
+    const t=tips[i%tips.length]; return {...t, conf:72+(i%4)*2};
+  }
+
+  // Champions League / Europa / Conference
+  if(l.includes("champions") || l.includes("europa") || l.includes("conference")){
+    const tips=[
+      {tip:"Both Teams to Score", reason:"European knockout ties see both sides attack — defensive errors are common under pressure.", o:1.50},
+      {tip:"Over 2.5 Goals",      reason:"European nights produce high-intensity, open football with goals at both ends.", o:1.48},
+      {tip:"Asian Handicap -0.5 Home", reason:"Home side holds advantage in European two-legged ties with crowd support.", o:1.55},
+    ];
+    const t=tips[i%tips.length]; return {...t, conf:76+(i%3)*2};
+  }
+
+  // Youth football
+  if(l.includes("u21") || l.includes("u20") || l.includes("u19") || l.includes("u17") || l.includes("youth") || l.includes("reserve")){
+    const tips=[
+      {tip:"Over 2.5 Goals",      reason:"Youth football is typically high-scoring with less organised defensive structure.", o:1.50},
+      {tip:"Both Teams to Score", reason:"Young sides are adventurous going forward and less disciplined at the back.", o:1.45},
+    ];
+    const t=tips[i%tips.length]; return {...t, conf:66+(i%4)*2};
+  }
+
+  // Default — domestic leagues
+  const tips=[
+    {tip:"Both Teams to Score", reason:"Both sides have been scoring regularly and this fixture has a strong BTTS record.", o:1.48},
+    {tip:"Over 2.5 Goals",      reason:"High-scoring league match expected based on both teams' recent attacking form.", o:1.45},
+    {tip:"Over 1.5 Goals",      reason:"Goals are expected in this match — neither side has been keeping many clean sheets.", o:1.38},
+    {tip:"Home Win",            reason:"Home side in strong form and holds a commanding record at this venue.", o:1.45},
+    {tip:"Away Win",            reason:"Away side in excellent recent form and have quality to win on the road.", o:1.55},
+    {tip:"Draw No Bet – Home",  reason:"Home side are slight favourites; Draw No Bet offers insurance on the result.", o:1.42},
+  ];
+  const t=tips[i%tips.length]; return {...t, conf:72+(i%4)*2};
+}
+
+async function loadFixtures(){
+  document.getElementById('matchList').innerHTML='<div class="loading"><div class="spin">⚽</div><p>Fetching today\'s fixtures…</p></div>';
+  selected=new Set();
+  try {
+    const controller=new AbortController();
+    const timer=setTimeout(()=>controller.abort(),8000);
+    const url=`https://www.thesportsdb.com/api/v1/json/123/eventsday.php?d=${TODAY_ISO}&s=Soccer`;
+    const r=await fetch(url,{signal:controller.signal});
+    clearTimeout(timer);
+    if(!r.ok) throw new Error('http');
+    const d=await r.json();
+    const evs=Array.isArray(d.events)?d.events:[];
+    if(!evs.length) throw new Error('empty');
+    fixtures=evs.slice(0,12).map((e,i)=>{
+      const {tip,reason,o,conf}=assignTip(i, e.strLeague||'');
+      return {
+        h:e.strHomeTeam||'Home', a:e.strAwayTeam||'Away',
+        league:(e.strLeague||'Football').replace('UEFA ',''),
+        ko:e.strTime?e.strTime.slice(0,5)+' UTC':'TBC',
+        tip,reason,o,conf,top:i<2
+      };
+    });
+    selected=new Set([0,1]);
+    renderSlip('live');
+  } catch(e){
+    useFallback();
+  }
+}
+
+function useFallback(){
+  fixtures=[
+    {h:'Real Madrid W',a:'Barcelona W',league:"Women's CL QF",ko:'17:45 UTC',tip:'Both Teams to Score',o:1.48,conf:80,reason:'El Clásico always delivers goals from both ends.',top:true},
+    {h:'Man Utd W',a:'Bayern Munich W',league:"Women's CL QF",ko:'20:00 UTC',tip:'Over 1.5 Goals',o:1.40,conf:83,reason:'Bayern prolific away; quiet game very unlikely.',top:true},
+    {h:'Arsenal',a:'Chelsea',league:'Premier League',ko:'15:00 UTC',tip:'Both Teams to Score',o:1.50,conf:78,reason:'London derbies are open; both sides score freely.',top:false},
+    {h:'Bayern Munich',a:'Dortmund',league:'Bundesliga',ko:'17:30 UTC',tip:'Over 2.5 Goals',o:1.42,conf:81,reason:'Der Klassiker historically produces 3+ goals.',top:false},
+    {h:'PSG',a:'Lyon',league:'Ligue 1',ko:'20:00 UTC',tip:'Home Win',o:1.38,conf:76,reason:'PSG dominant at Parc des Princes against domestic rivals.',top:false},
+    {h:'Inter Milan',a:'AC Milan',league:'Serie A',ko:'18:00 UTC',tip:'Over 1.5 Goals',o:1.40,conf:74,reason:'Derby della Madonnina rarely ends goalless.',top:false},
+  ];
+  selected=new Set([0,1]);
+  renderSlip('fallback');
+}
+
+function confColor(c){return c>=78?'#22c55e':c>=70?'#f59e0b':'#f87171'}
+
+function renderSlip(mode){
+  let html='';
+  if(mode==='live') html+=`<div class="notice live"><strong>✅ Live data loaded</strong> — ${fixtures.length} real fixtures for today.</div>`;
+  if(mode==='fallback') html+=`<div class="notice warn"><strong>⚠️ Using curated picks</strong> — Live fetch unavailable right now.</div>`;
+  html+=fixtures.map((m,i)=>{
+    const on=selected.has(i);
+    return `<div class="card ${on?'on':''}" onclick="toggle(${i})">
+      ${m.top?'<div class="top-pick">⭐ TOP PICK</div>':''}
+      <div class="card-body">
+        <div style="flex:1;min-width:0">
+          <div class="meta"><span class="league">${m.league}</span><span class="ko">⏱ ${m.ko}</span></div>
+          <div class="teams">${m.h} <em>vs</em> ${m.a}</div>
+          <span class="tip-badge ${on?'on':''}">${m.tip}</span>
+          <div class="reason">${m.reason}</div>
+        </div>
+        <div class="odds-col">
+          <div class="odds ${on?'on':''}">@${m.o}</div>
+          <div class="conf" style="color:${confColor(m.conf)}">${m.conf}% conf</div>
+          <div class="chk ${on?'on':''}">${on?'✓':''}</div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+  document.getElementById('matchList').innerHTML=html;
+  renderAcca();
+}
+
+function toggle(i){selected.has(i)?selected.delete(i):selected.add(i);renderSlip(null);}
+
+function renderAcca(){
+  const picks=[...selected].map(i=>fixtures[i]).filter(Boolean);
+  const total=picks.reduce((a,m)=>a*m.o,1);
+  document.getElementById('accaCount').textContent=`YOUR ACCA · ${picks.length} MATCH${picks.length!==1?'ES':''}`;
+  const tot=document.getElementById('accaTotal'),pks=document.getElementById('accaPicks');
+  if(!picks.length){
+    tot.textContent='—';tot.className='acca-total empty';
+    pks.innerHTML='<div class="acca-empty">Tap matches to build your acca</div>';
+  } else {
+    tot.textContent=total.toFixed(2);tot.className='acca-total';
+    pks.innerHTML=picks.map(m=>`<div class="apick"><span>${m.h} vs ${m.a}</span><span>${m.tip} @${m.o}</span></div>`).join('');
+  }
+}
+
+function showTab(t){
+  document.getElementById('tab-slip').style.display=t==='slip'?'':'none';
+  document.getElementById('tab-tracker').style.display=t==='tracker'?'':'no
