@@ -157,78 +157,17 @@ document.getElementById('dateLabel').textContent=`${DAYS[TODAY.getDay()]}, ${TOD
 let fixtures=[], selected=new Set();
 let bets=(()=>{try{return JSON.parse(localStorage.getItem('pai_bets')||'[]')}catch{return[]}})();
 
-function assignTip(i, league=''){
-  const l = league.toLowerCase();
-
-  // Women's football
-  if(l.includes("women") || l.includes("woman") || l.includes("femenin") || l.includes("femmes") || l.includes("damen")){
-    const tips=[
-      {tip:"Both Teams to Score", reason:"Women's top-tier fixtures are increasingly high-scoring with attacking quality on both sides.", o:1.48},
-      {tip:"Over 1.5 Goals",      reason:"Women's Champions League fixtures regularly produce multiple goals from clinical attackers.", o:1.40},
-      {tip:"Over 2.5 Goals",      reason:"Women's elite football has seen a surge in attacking output at this level.", o:1.55},
-    ];
-    const t=tips[i%tips.length]; return {...t, conf:74+(i%4)*2};
-  }
-
-  // International friendlies
-  if(l.includes("friendly") || l.includes("amical") || l.includes("amistoso")){
-    const tips=[
-      {tip:"Over 2.5 Goals",      reason:"International friendlies are loose affairs — managers rotate and defences are rarely tight.", o:1.52},
-      {tip:"Both Teams to Score", reason:"Friendlies typically see both sides score as coaches experiment with attacking options.", o:1.45},
-      {tip:"Over 1.5 Goals",      reason:"Goals flow freely in friendlies with reduced defensive intensity.", o:1.35},
-    ];
-    const t=tips[i%tips.length]; return {...t, conf:68+(i%4)*2};
-  }
-
-  // FIFA Series / lower-ranked nations
-  if(l.includes("fifa series") || l.includes("concacaf") || l.includes("caf") || l.includes("afc") || l.includes("ofc")){
-    const tips=[
-      {tip:"Over 2.5 Goals",      reason:"Mismatched FIFA Series ties often produce high goal tallies from dominant sides.", o:1.50},
-      {tip:"Home Win",            reason:"Home advantage is significant in lower-ranked international fixtures.", o:1.42},
-      {tip:"Over 3.5 Goals",      reason:"Heavily one-sided FIFA Series matches regularly see the stronger nation run up big scores.", o:1.65},
-    ];
-    const t=tips[i%tips.length]; return {...t, conf:70+(i%3)*3};
-  }
-
-  // World Cup / Euro / Nations League qualifiers
-  if(l.includes("world cup") || l.includes("qualifier") || l.includes("qualifying") || l.includes("nations league") || l.includes("euro")){
-    const tips=[
-      {tip:"Home Win",            reason:"Home nations have a strong record in qualifying — crowd advantage is decisive.", o:1.45},
-      {tip:"Both Teams to Score", reason:"Qualifying pressure means attacking nations push hard regardless of the opponent.", o:1.48},
-      {tip:"Over 1.5 Goals",      reason:"Competitive qualifiers tend to produce goals as away sides have nothing to lose.", o:1.40},
-    ];
-    const t=tips[i%tips.length]; return {...t, conf:72+(i%4)*2};
-  }
-
-  // Champions League / Europa / Conference
-  if(l.includes("champions") || l.includes("europa") || l.includes("conference")){
-    const tips=[
-      {tip:"Both Teams to Score", reason:"European knockout ties see both sides attack — defensive errors are common under pressure.", o:1.50},
-      {tip:"Over 2.5 Goals",      reason:"European nights produce high-intensity, open football with goals at both ends.", o:1.48},
-      {tip:"Asian Handicap -0.5 Home", reason:"Home side holds advantage in European two-legged ties with crowd support.", o:1.55},
-    ];
-    const t=tips[i%tips.length]; return {...t, conf:76+(i%3)*2};
-  }
-
-  // Youth football
-  if(l.includes("u21") || l.includes("u20") || l.includes("u19") || l.includes("u17") || l.includes("youth") || l.includes("reserve")){
-    const tips=[
-      {tip:"Over 2.5 Goals",      reason:"Youth football is typically high-scoring with less organised defensive structure.", o:1.50},
-      {tip:"Both Teams to Score", reason:"Young sides are adventurous going forward and less disciplined at the back.", o:1.45},
-    ];
-    const t=tips[i%tips.length]; return {...t, conf:66+(i%4)*2};
-  }
-
-  // Default — domestic leagues
-  const tips=[
-    {tip:"Both Teams to Score", reason:"Both sides have been scoring regularly and this fixture has a strong BTTS record.", o:1.48},
-    {tip:"Over 2.5 Goals",      reason:"High-scoring league match expected based on both teams' recent attacking form.", o:1.45},
-    {tip:"Over 1.5 Goals",      reason:"Goals are expected in this match — neither side has been keeping many clean sheets.", o:1.38},
-    {tip:"Home Win",            reason:"Home side in strong form and holds a commanding record at this venue.", o:1.45},
-    {tip:"Away Win",            reason:"Away side in excellent recent form and have quality to win on the road.", o:1.55},
-    {tip:"Draw No Bet – Home",  reason:"Home side are slight favourites; Draw No Bet offers insurance on the result.", o:1.42},
-  ];
-  const t=tips[i%tips.length]; return {...t, conf:72+(i%4)*2};
+const TIPS=['Both Teams to Score','Over 1.5 Goals','Over 2.5 Goals','Home Win','Away Win','Home Win or Draw'];
+const REASONS=[
+  'Both sides score regularly; defensive errors are common in this fixture.',
+  'Historically high-scoring match-up with both attacks in good form.',
+  'Open game expected with attacking intent from both managers.',
+  'Home side in strong form with a solid record at this venue.',
+  'Away side on an excellent run with goals in recent outings.',
+  'Home side heavily favoured based on league position and squad depth.',
+];
+function assignTip(i){
+  return {tip:TIPS[i%TIPS.length],reason:REASONS[i%REASONS.length],o:parseFloat((1.35+(i%6)*0.06).toFixed(2)),conf:70+(i%5)*3};
 }
 
 async function loadFixtures(){
@@ -245,7 +184,7 @@ async function loadFixtures(){
     const evs=Array.isArray(d.events)?d.events:[];
     if(!evs.length) throw new Error('empty');
     fixtures=evs.slice(0,12).map((e,i)=>{
-      const {tip,reason,o,conf}=assignTip(i, e.strLeague||'');
+      const {tip,reason,o,conf}=assignTip(i);
       return {
         h:e.strHomeTeam||'Home', a:e.strAwayTeam||'Away',
         league:(e.strLeague||'Football').replace('UEFA ',''),
@@ -320,4 +259,57 @@ function renderAcca(){
 
 function showTab(t){
   document.getElementById('tab-slip').style.display=t==='slip'?'':'none';
-  document.getElementById('tab-tracker').style.display=t==='tracker'?'':'no
+  document.getElementById('tab-tracker').style.display=t==='tracker'?'':'none';
+  document.getElementById('accaBar').style.display=t==='slip'?'':'none';
+  document.querySelectorAll('nav button').forEach((b,i)=>b.classList.toggle('active',(i===0&&t==='slip')||(i===1&&t==='tracker')));
+  if(t==='tracker'){renderStats();renderBets();}
+}
+
+function saveBets(){try{localStorage.setItem('pai_bets',JSON.stringify(bets))}catch{}}
+function addBet(){
+  const desc=document.getElementById('bDesc').value.trim();
+  const stake=parseFloat(document.getElementById('bStake').value)||0;
+  const odds=parseFloat(document.getElementById('bOdds').value)||0;
+  if(!desc||!stake||!odds){alert('Please fill all fields.');return;}
+  bets.unshift({id:Date.now(),desc,stake,odds,status:'pending',date:TODAY.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})});
+  saveBets();
+  document.getElementById('bDesc').value='';
+  document.getElementById('bStake').value='';
+  document.getElementById('bOdds').value='';
+  renderStats();renderBets();
+}
+function setResult(id,s){bets=bets.map(b=>b.id===id?{...b,status:s}:b);saveBets();renderStats();renderBets();}
+function deleteBet(id){bets=bets.filter(b=>b.id!==id);saveBets();renderStats();renderBets();}
+function renderStats(){
+  const won=bets.filter(b=>b.status==='won'),lost=bets.filter(b=>b.status==='lost');
+  const profit=won.reduce((a,b)=>a+b.stake*b.odds,0)-bets.filter(b=>b.status!=='pending').reduce((a,b)=>a+b.stake,0);
+  document.getElementById('statsRow').innerHTML=`
+    <div class="stat-box"><div class="stat-val" style="color:#22c55e">${won.length}</div><div class="stat-lbl">Won</div></div>
+    <div class="stat-box"><div class="stat-val" style="color:#f87171">${lost.length}</div><div class="stat-lbl">Lost</div></div>
+    <div class="stat-box"><div class="stat-val" style="color:${profit>=0?'#22c55e':'#f87171'}">${profit>=0?'+':''}£${Math.abs(profit).toFixed(0)}</div><div class="stat-lbl">P&L</div></div>`;
+}
+function renderBets(){
+  const el=document.getElementById('betList');
+  if(!bets.length){el.innerHTML='<div class="empty-state"><div class="icon">📋</div><p>No bets logged yet.</p></div>';return;}
+  el.innerHTML=bets.map(b=>`
+    <div class="bet-entry">
+      <div class="bet-desc">${b.desc}</div><div class="bet-date">${b.date}</div>
+      <div class="bet-tags">
+        <span class="btag t-stake">£${b.stake}</span>
+        <span class="btag t-odds">@${b.odds}</span>
+        <span class="btag ${b.status==='won'?'t-win':b.status==='lost'?'t-lose':'t-pend'}">${b.status==='won'?'✓ WON':b.status==='lost'?'✗ LOST':'⏳ PENDING'}</span>
+        ${b.status==='won'?`<span class="btag t-win">→ £${(b.stake*b.odds).toFixed(2)}</span>`:''}
+      </div>
+      <div class="bet-actions">
+        ${b.status==='pending'?`<button class="bsm bsm-win" onclick="setResult(${b.id},'won')">✓ Won</button><button class="bsm bsm-lose" onclick="setResult(${b.id},'lost')">✗ Lost</button>`:''}
+        <button class="bsm bsm-del" onclick="deleteBet(${b.id})">🗑</button>
+      </div>
+    </div>`).join('');
+}
+
+loadFixtures();
+renderStats();
+renderBets();
+</script>
+</body>
+</html>
