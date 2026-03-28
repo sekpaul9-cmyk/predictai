@@ -1,2 +1,0 @@
-# predictai
-Sport prediction for 
